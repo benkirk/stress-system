@@ -1,0 +1,20 @@
+#!/bin/bash
+#PBS -A SCSG0001
+#PBS -q main
+#PBS -j oe
+#PBS -k oed
+#PBS -l walltime=01:00:00
+#PBS -l select=1:ncpus=128:mpiprocs=128:mem=200G
+
+### Set temp to scratch
+[[ "x${TMPDIR}" == "x" ]] && export TMPDIR=${SCRATCH}/tmp && mkdir -p $TMPDIR
+
+exe=./stress-ng/stress-ng
+
+[ -x ${exe} ] || { echo "cannot locate ${exe}!"; exit 1; }
+
+rm -f log-${PBS_JOBID}
+while true; do
+    # https://wiki.ubuntu.com/Kernel/Reference/stress-ng:
+    ${exe} --matrix 0 --matrix-size 64 --tz -t 60 >> log-${PBS_JOBID}
+done
