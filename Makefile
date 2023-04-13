@@ -15,4 +15,4 @@ clean:
 	rm -f log-* *~ *.pbs.o*
 
 qdelall:
-	qdel $$(qstat -u $${USER} 2>/dev/null | grep ".desched" | cut -d'.' -f1)
+	qdel $$(qstat -u $${USER} 2>/dev/null | grep ".desched" | grep "stressng" | cut -d'.' -f1)
