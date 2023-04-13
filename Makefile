@@ -7,9 +7,11 @@ runmany: stress-ng/stress-ng
 
 stress-ng/stress-ng:
 	git submodule update --init --recursive
-	cd stress-ng
-	module --force purge 2>&1
-	make
+	git clean -xdf stress-ng
+	make CC=/usr/bin/gcc -C stress-ng -j 24
 
 clean:
 	rm -f log-* *~ *.pbs.o*
+
+qdelall:
+	qdel $$(qstat -u $${USER} 2>/dev/null | grep ".desched" | cut -d'.' -f1)

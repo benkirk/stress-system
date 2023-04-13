@@ -11,10 +11,12 @@
 
 exe=./stress-ng/stress-ng
 
+ncores=$(cat ${PBS_NODEFILE} | wc -l)
+
 [ -x ${exe} ] || { echo "cannot locate ${exe}!"; exit 1; }
 
 rm -f log-${PBS_JOBID}
 while true; do
     # https://wiki.ubuntu.com/Kernel/Reference/stress-ng:
-    ${exe} --matrix 0 --matrix-size 64 --tz -t 60 >> log-${PBS_JOBID}
+    ${exe} --matrix ${ncores} --matrix-size 64 --tz -t 60 >> log-${PBS_JOBID}
 done
