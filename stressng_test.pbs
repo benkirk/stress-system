@@ -7,7 +7,7 @@
 #PBS -l select=1:ncpus=128:mpiprocs=128:mem=200G
 
 ### Set temp to scratch
-[[ "x${TMPDIR}" == "x" ]] && export TMPDIR=${SCRATCH}/tmp && mkdir -p $TMPDIR
+[[ "x${TMPDIR}" == "x" ]] && export TMPDIR=${SCRATCH}/tmp && mkdir -p ${TMPDIR}
 
 exe=./stress-ng/stress-ng
 
@@ -18,5 +18,5 @@ ncores=$(cat ${PBS_NODEFILE} | wc -l)
 rm -f log-${PBS_JOBID}
 while true; do
     # https://wiki.ubuntu.com/Kernel/Reference/stress-ng:
-    ${exe} --matrix ${ncores} --matrix-size 64 --tz -t 60 >> log-${PBS_JOBID}
+    ${exe} --matrix ${ncores} --matrix-size 64 --tz -t 60 >> log-${PBS_JOBID} 2>&1
 done
