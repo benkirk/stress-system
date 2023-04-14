@@ -15,6 +15,11 @@ ncores=$(cat ${PBS_NODEFILE} | wc -l)
 
 [ -x ${exe} ] || { echo "cannot locate ${exe}!"; exit 1; }
 
+echo $(pwd)/${exe}
+ldd $(pwd)/${exe}
+
+echo "Starting run on $(hostname) at $(date)"
+
 rm -f log-${PBS_JOBID}
 while true; do
     # https://wiki.ubuntu.com/Kernel/Reference/stress-ng:
