@@ -1,0 +1,42 @@
+#!/bin/bash
+#PBS -A SCSG0001
+#PBS -q main
+#PBS -j oe
+#PBS -k oed
+#PBS -l walltime=02:00:00
+#PBS -l select=50:ncpus=128:mpiprocs=1:mem=200G
+
+### Set temp to scratch
+[[ "x${TMPDIR}" == "x" ]] && export TMPDIR=${SCRATCH}/tmp && mkdir -p ${TMPDIR}
+
+nodeslist=( $(cat ${PBS_NODEFILE} | sort | uniq | cut -d'.' -f1) )
+# for node in $(cat ${PBS_NODEFILE} | sort | uniq | cut -d'.' -f1); do
+#     echo ${node}
+#     nodeslist+=( ${node} )
+# done
+
+top_dir=$(pwd)
+mkdir -p ${top_dir}/pt2pt || exit 1
+cd ${top_dir}/pt2pt || exit 1
+echo ${nodeslist[@]} > nodes_list.txt
+
+
+
+for i in ${!nodeslist[@]}; do
+    for j in ${!nodeslist[@]}; do
+        [ $i -lt $j ] || continue
+
+        cd ${top_dir} || exit 1
+
+        nodeA=${nodeslist[$i]}
+        nodeB=${nodeslist[$j]}
+
+        mkdir -p ${top_dir}/pt2pt/${nodeA}-${nodeB} || exit 1
+        cd ${top_dir}/pt2pt/${nodeA}-${nodeB} || exit 1
+
+        minsize=$((1024*16*16*4))
+        maxsize=$((1024*16*16*32))
+
+        mpiexec -n 2 --hosts ${nodeA},${nodeB} ${top_dir}/netgauge/${NCAR_BUILD_ENV}/bin/netgauge -c 1000 -s ${minsize}-${maxsize} -m mpi -x one_one | tee one_one.log
+    done
+done

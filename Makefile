@@ -11,6 +11,14 @@ stress-ng/stress-ng:
 	git clean -xdf stress-ng
 	make CC=/usr/bin/gcc -C stress-ng -j 24
 
+netgauge/$(NCAR_BUILD_ENV):
+	top_dir=$$(pwd) ; \
+	mkdir -p $${top_dir}/netgauge && cd $${top_dir}/netgauge ; \
+	[ -d netgauge-2.4.6 ] || curl -sL https://htor.inf.ethz.ch/research/netgauge/netgauge-2.4.6.tar.gz | tar xz ; \
+	cd $${top_dir}/netgauge/netgauge-2.4.6 ; \
+	$${top_dir}/netgauge/netgauge-2.4.6/configure HRT_ARCH=6 --prefix=$${top_dir}/$@ ; \
+	make && make install
+
 clean:
 	rm -f log-* *~ *.pbs.o*
 
