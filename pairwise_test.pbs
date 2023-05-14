@@ -6,6 +6,8 @@
 #PBS -l walltime=02:00:00
 #PBS -l select=50:ncpus=128:mpiprocs=1:mem=200G
 
+module reset && module load gcc && module list
+
 ### Set temp to scratch
 [[ "x${TMPDIR}" == "x" ]] && export TMPDIR=${SCRATCH}/tmp && mkdir -p ${TMPDIR}
 
@@ -24,19 +26,23 @@ echo ${nodeslist[@]} > nodes_list.txt
 
 for i in ${!nodeslist[@]}; do
     for j in ${!nodeslist[@]}; do
-        [ $i -lt $j ] || continue
+        [ $i -gt $j ] && continue
 
         cd ${top_dir} || exit 1
 
         nodeA=${nodeslist[$i]}
         nodeB=${nodeslist[$j]}
 
-        mkdir -p ${top_dir}/pt2pt/${nodeA}-${nodeB} || exit 1
-        cd ${top_dir}/pt2pt/${nodeA}-${nodeB} || exit 1
+        echo "(i,j)=($i,$j) / (nodeA,nodeB)=($nodeA,$nodeB)"
+        mkdir -p ${top_dir}/pt2pt/${nodeA}/${nodeA}-${nodeB} || exit 1
+        cd ${top_dir}/pt2pt/${nodeA}/${nodeA}-${nodeB} || exit 1
 
         minsize=$((1024*16*16*4))
         maxsize=$((1024*16*16*32))
 
-        mpiexec -n 2 --hosts ${nodeA},${nodeB} ${top_dir}/netgauge/${NCAR_BUILD_ENV}/bin/netgauge -c 1000 -s ${minsize}-${maxsize} -m mpi -x one_one | tee one_one.log
+        mpiexec -n 2 --hosts ${nodeA},${nodeB} hostname | tee hostname.log
+        mpiexec -n 2 --hosts ${nodeA},${nodeB} ${top_dir}/netgauge/${NCAR_BUILD_ENV}/bin/netgauge -c 500 -s ${minsize}-${maxsize} -m mpi -x one_one | tee one_one.log
     done
 done
+
+echo "DONE at $(date)"

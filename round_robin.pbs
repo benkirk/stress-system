@@ -1,0 +1,31 @@
+#!/bin/bash
+#PBS -A SCSG0001
+#PBS -q main
+#PBS -j oe
+#PBS -k oed
+#PBS -l walltime=04:00:00
+#PBS -l select=10:ncpus=128:mpiprocs=128:mem=200G
+
+### Set temp to scratch
+[[ "x${TMPDIR}" == "x" ]] && export TMPDIR=${SCRATCH}/tmp && mkdir -p ${TMPDIR}
+
+nodeslist=( $(cat ${PBS_NODEFILE} | sort | uniq | cut -d'.' -f1) )
+nnodes=$(cat ${PBS_NODEFILE} | sort | uniq | wc -l)
+nranks=$(cat ${PBS_NODEFILE} | sort | wc -l)
+nranks_per_node=$((${nranks} / ${nnodes}))
+
+exec="round_robin_pt2pt.exe.${PBS_JOBID}"
+mpicxx -o ${exec} /glade/u/home/benkirk/round_robin_pt2pt.C || exit 1
+
+export MPICH_OFI_VERBOSE=1
+#export MPICH_OFI_NIC_VERBOSE=2
+#export MPICH_OFI_CXI_COUNTER_REPORT=3
+#export MPICH_OFI_CXI_COUNTER_VERBOSE=1
+export MPICH_MEMORY_REPORT=1
+
+mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --restart --cpu-bind core \
+        ./${exec} | tee pt2pt-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log
+
+rm -f ${exec}
+
+echo "# DONE at $(date)"
