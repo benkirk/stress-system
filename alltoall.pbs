@@ -3,7 +3,7 @@
 #PBS -q main
 #PBS -j oe
 #PBS -k oed
-#PBS -l walltime=04:00:00
+#PBS -l walltime=00:25:00
 #PBS -l select=10:ncpus=128:mpiprocs=128:mem=200G
 
 ### Set temp to scratch
@@ -18,10 +18,12 @@ exec="alltoall_avg.exe.${PBS_JOBID}"
 mpicxx -o ${exec} /glade/u/home/benkirk/alltoall_avg.C || exit 1
 
 export MPICH_OFI_VERBOSE=1
-#export MPICH_OFI_NIC_VERBOSE=2
-#export MPICH_OFI_CXI_COUNTER_REPORT=3
-#export MPICH_OFI_CXI_COUNTER_VERBOSE=1
+export MPICH_OFI_NIC_VERBOSE=2
+export MPICH_OFI_CXI_COUNTER_REPORT=3
+export MPICH_OFI_CXI_COUNTER_VERBOSE=1
 export MPICH_MEMORY_REPORT=1
+export PALS_RPC_TIMEOUT=360
+export PALS_TIMEOUT=${PALS_RPC_TIMEOUT}
 
 mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --restart --cpu-bind core \
         ./${exec} | tee alltoall-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log

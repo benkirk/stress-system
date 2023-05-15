@@ -3,3 +3,4 @@ log-*
 *.pbs.o*
 netgauge/
 pt2pt/
+*logs/

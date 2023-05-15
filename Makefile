@@ -1,24 +1,16 @@
 njobs ?= 10
 
 runpt2pt:
-	qsub -l  select=2:ncpus=128:mpiprocs=128:mem=200G round_robin.pbs
-	qsub -l  select=4:ncpus=128:mpiprocs=128:mem=200G round_robin.pbs
-	qsub -l  select=8:ncpus=128:mpiprocs=128:mem=200G round_robin.pbs
-	qsub -l  select=10:ncpus=128:mpiprocs=128:mem=200G round_robin.pbs
-	qsub -l  select=20:ncpus=128:mpiprocs=128:mem=200G round_robin.pbs
-	qsub -l  select=40:ncpus=128:mpiprocs=128:mem=200G round_robin.pbs
-	qsub -l  select=20:ncpus=128:mpiprocs=64:mem=200G round_robin.pbs
-	qsub -l  select=40:ncpus=128:mpiprocs=32:mem=200G round_robin.pbs
-	qsub -l  select=80:ncpus=128:mpiprocs=16:mem=200G round_robin.pbs
-	qsub -l  select=160:ncpus=128:mpiprocs=8:mem=200G round_robin.pbs
-	qsub -l  select=160:ncpus=128:mpiprocs=16:mem=200G round_robin.pbs
-	qsub -l  select=160:ncpus=128:mpiprocs=32:mem=200G round_robin.pbs
-	qsub -l  select=256:ncpus=128:mpiprocs=1:mem=200G round_robin.pbs
+	for nn in 2 4 8 16 32 64 128 256; do \
+	  for ppn in 1 2 4 8 16 32 64 120 128 128; do \
+	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -l select=$${ss} round_robin.pbs ; \
+	  done ; \
+	done
 
 runalltoall:
 	for nn in 2 4 8 16 32 64 128 256; do \
-	  for ppn in 4 8 16 32 64 128; do \
-	    qsub -l select=$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G alltoall.pbs ; \
+	  for ppn in 1 2 4 8 16 32 64 120 128 128; do \
+	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -l select=$${ss} alltoall.pbs ; \
 	  done ; \
 	done
 
@@ -44,6 +36,10 @@ netgauge/$(NCAR_BUILD_ENV):
 clean:
 	rm -f log-* *~ *.pbs.o* nr*.log
 
+clobber:
+	$(MAKE) clean
+	git clean -xdf --exclude "*/"
+
 qdelall:
 	qdel $$(qstat -u $${USER} 2>/dev/null | grep ".desched" | egrep "round|alltoall|stressng" | cut -d'.' -f1)
 
@@ -54,11 +50,17 @@ results-pt2pt:
 	  [ -f $${file} ] && echo $${file} || continue ; \
 	  grep "# --> END execution" $${file} >/dev/null 2>&1 || continue ; \
 	  awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' $${file} > $${file}.csv ; \
-	  sed -i 's/Global Rank/# Global Rank/g' $${file}.csv ; \
 	  cp $${file}.csv results-$${stub}.latest.csv ; \
 	done
 	grep "Slowest" pt2pt-nr*.log
 
 results-alltoall:
+	for file in alltoall-nr*.log; do \
+	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
+	  [ -f $${file} ] && echo $${file} || continue ; \
+	  grep "# --> END execution" $${file} >/dev/null 2>&1 || continue ; \
+	  awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' $${file} > $${file}.txt ; \
+	  cp $${file}.txt results-$${stub}.latest.txt ; \
+	done
 	grep "avg_time" alltoall-nr*.log
 	grep "Slowest" alltoall-nr*.log
