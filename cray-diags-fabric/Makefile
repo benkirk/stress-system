@@ -1,4 +1,6 @@
-
+run:
+	$(MAKE) run_switches
+	$(MAKE) run_switchgroups
 
 
 run_switchgroups: switchgroups.txt nodelist.txt
@@ -20,6 +22,14 @@ run_switches: switches.txt nodelist.txt
 	  echo "$${line} \"$${sw}\" \"$${nn_sw}\"" ; \
 	  ss="$${nn_sw}:switch=$${sw}:ncpus=$${ppn_sw}:mpiprocs=$${ppn_sw}:mem=200G" && echo $${ss} && qsub -N dgnettest-sw-$${sw} -l select=$${ss} dgnettest.pbs ; \
 	done < $<
+
+clean:
+	rm -f *.log dgnettest*.o*
+
+clobber:
+	$(MAKE) clean
+	git clean -xdf --exclude "*/"
+
 
 nodelist.txt: Makefile
 	pbsnodes -a -F json | jq -r '.nodes[].resources_available | .host + " " + .switch + " " + .switchgroup' | sort -k2 > $@.tmp
@@ -47,5 +57,11 @@ qdelall:
 	qdel $$(qstat -u $${USER} 2>/dev/null | grep ".desched" | egrep "dgnettest" | cut -d'.' -f1)
 
 
+results:
+	grep "dgnettest has " dgnettest-*.log
+
+results-switchgroups:
+	grep "dgnettest has " dgnettest-sg-*.log
+
 results-switches:
-	grep "dgnettest has " dgnettest*.log
+	grep "dgnettest has " dgnettest-sw-*.log
