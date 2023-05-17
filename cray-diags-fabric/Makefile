@@ -1,6 +1,8 @@
 run:
 	$(MAKE) run_switches
+	$(MAKE) run_switchpairs
 	$(MAKE) run_switchgroups
+	$(MAKE) run_switchgrouppairs
 
 
 run_switchgroups: switchgroups.txt nodelist.txt
@@ -24,7 +26,7 @@ run_switchgrouppairs: switchgroups.txt nodelist.txt
 	    nn_sg2=$$(echo $${line2} | cut -d' ' -f3) ; \
             ppn_sg2=0 ; \
 	    cat nodelist.txt | grep $${sg2} | grep deg >/dev/null && ppn_sg2=64 || ppn_sg2=128; \
-	    ss="$${nn_sg1}:switch=$${sg1}:ncpus=$${ppn_sg1}:mpiprocs=$${ppn_sg1}:mem=200G+$${nn_sg1}:switch=$${sg2}:ncpus=$${ppn_sg2}:mpiprocs=$${ppn_sg2}:mem=200G" && echo $${ss} && qsub -N dgnettest-sgpair-$${sg1}-$${sg2} -l select=$${ss} dgnettest.pbs ; \
+	    ss="$${nn_sg1}:switch=$${sg1}:ncpus=$${ppn_sg1}:mpiprocs=$${ppn_sg1}:mem=200G+$${nn_sg1}:switch=$${sg2}:ncpus=$${ppn_sg2}:mpiprocs=$${ppn_sg2}:mem=200G" && echo -en "$${ss} \t" && qsub -N dgnettest-sgpair-$${sg1}-$${sg2} -l select=$${ss} dgnettest.pbs ; \
 	  done < $< ; \
 	done < $<
 
@@ -35,7 +37,7 @@ run_switches: switches.txt nodelist.txt
 	  nn_sw=$$(echo $${line} | cut -d' ' -f3) ; \
           ppn_sw=0 ; \
 	  cat nodelist.txt | grep $${sw} | grep deg >/dev/null && ppn_sw=64 || ppn_sw=128; \
-	  ss="$${nn_sw}:switch=$${sw}:ncpus=$${ppn_sw}:mpiprocs=$${ppn_sw}:mem=200G" && echo $${ss} && qsub -N dgnettest-sw-$${sw} -l select=$${ss} dgnettest.pbs ; \
+	  ss="$${nn_sw}:switch=$${sw}:ncpus=$${ppn_sw}:mpiprocs=$${ppn_sw}:mem=200G" && echo -en "$${ss} \t" && qsub -N dgnettest-sw-$${sw} -l select=$${ss} dgnettest.pbs ; \
 	done < $<
 
 run_switchpairs: switches.txt nodelist.txt
@@ -50,7 +52,7 @@ run_switchpairs: switches.txt nodelist.txt
 	    nn_sw2=$$(echo $${line2} | cut -d' ' -f3) ; \
             ppn_sw2=0 ; \
 	    cat nodelist.txt | grep $${sw2} | grep deg >/dev/null && ppn_sw2=64 || ppn_sw2=128; \
-	    ss="$${nn_sw1}:switch=$${sw1}:ncpus=$${ppn_sw1}:mpiprocs=$${ppn_sw1}:mem=200G+$${nn_sw1}:switch=$${sw2}:ncpus=$${ppn_sw2}:mpiprocs=$${ppn_sw2}:mem=200G" && echo $${ss} && qsub -N dgnettest-swpair-$${sw1}-$${sw2} -l select=$${ss} dgnettest.pbs ; \
+	    ss="$${nn_sw1}:switch=$${sw1}:ncpus=$${ppn_sw1}:mpiprocs=$${ppn_sw1}:mem=200G+$${nn_sw1}:switch=$${sw2}:ncpus=$${ppn_sw2}:mpiprocs=$${ppn_sw2}:mem=200G" && echo -en "$${ss} \t" && qsub -N dgnettest-swpair-$${sw1}-$${sw2} -l select=$${ss} dgnettest.pbs ; \
 	  done < $< ; \
 	done < $<
 
@@ -93,6 +95,9 @@ results:
 
 results-switchgroups:
 	grep "dgnettest has " dgnettest-sg-*.log
-
 results-switches:
 	grep "dgnettest has " dgnettest-sw-*.log
+results-switchgrouppairs:
+	grep "dgnettest has " dgnettest-sgpair-*.log
+results-switchpairs:
+	grep "dgnettest has " dgnettest-swpair-*.log
