@@ -1,0 +1,17 @@
+#!/bin/bash
+#PBS -q workq
+#PBS -N dgnettest-pbs
+#PBS -j oe
+#PBS -l walltime=0:20:00
+
+PPN=4
+
+cd $PBS_O_WORKDIR
+
+NODES=$(wc -l $PBS_NODEFILE | awk '{print $1}')
+
+NP=$((NODES * PPN))
+
+module load cray-pals
+
+mpiexec --ppn $PPN --np $NP /usr/local/diag/bin/nettest -p $PPN -r auto -s 16 -m $((512 * 1024)) -t 120 -T 0.99 bisect
