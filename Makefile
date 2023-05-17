@@ -62,5 +62,6 @@ results-alltoall:
 	  awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' $${file} > $${file}.txt ; \
 	  cp $${file}.txt results-$${stub}.latest.txt ; \
 	done
+	grep "MPICH Slingshot Network Summary" alltoall-nr*.log
 	grep "avg_time" alltoall-nr*.log
 	grep "Slowest" alltoall-nr*.log
