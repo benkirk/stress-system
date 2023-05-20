@@ -22,8 +22,6 @@ export MPICH_OFI_NIC_VERBOSE=2
 export MPICH_OFI_CXI_COUNTER_REPORT=3
 export MPICH_OFI_CXI_COUNTER_VERBOSE=1
 export MPICH_MEMORY_REPORT=1
-export PALS_RPC_TIMEOUT=360
-export PALS_TIMEOUT=${PALS_RPC_TIMEOUT}
 
 mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --restart --cpu-bind core \
         ./${exec} | tee alltoall-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log

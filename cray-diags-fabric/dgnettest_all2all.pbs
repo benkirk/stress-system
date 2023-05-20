@@ -4,7 +4,7 @@
 #PBS -q main
 #PBS -j oe
 #PBS -k oed
-#PBS -l walltime=00:15:00
+#PBS -l walltime=00:30:00
 #PBS -l select=10:ncpus=128:mpiprocs=128:mem=200G
 
 ### Set temp to scratch
@@ -15,6 +15,7 @@ nnodes=$(cat ${PBS_NODEFILE} | sort | uniq | wc -l)
 nranks=$(cat ${PBS_NODEFILE} | sort | wc -l)
 nranks_per_node=$((${nranks} / ${nnodes}))
 
+logfile="${PBS_JOBNAME}_nr-${nranks}_nn-${nnodes}_ppn-${nranks_per_node}.${PBS_JOBID}.log"
 exec="$(pwd)/dgnettest"
 
 #export MPICH_OFI_VERBOSE=1
@@ -25,28 +26,20 @@ exec="$(pwd)/dgnettest"
 #export PALS_RPC_TIMEOUT=360
 #export PALS_TIMEOUT=${PALS_RPC_TIMEOUT}
 
+status="SUCCESS"
+
+rm -f ${logfile}
+
+echo "# nodeslist = ${nodeslist}" | tee -a ${logfile}
+
 mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --restart \
-        ${exec} -p ${nranks_per_node} -r auto -s 16 -m $((512 * 1024)) -t 120 -T 0.99 all2all \
-    | tee ${PBS_JOBNAME}_nr-${nranks}_nn-${nnodes}_ppn-${nranks_per_node}.${PBS_JOBID}.log
+        ${exec} -p ${nranks_per_node} -r auto -s 16 -m $((512 * 1024)) -t 120 -T 0.9999 bisect \
+    | tee -a ${logfile} \
+    || status="FAIL"
 
-echo "# DONE at $(date)"
+mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --restart \
+        ${exec} -p ${nranks_per_node} -r auto -s 16 -m $((512 * 1024)) -t 120 -T 0.9999 all2all \
+    | tee -a ${logfile} \
+    || status="FAIL"
 
-
-
-# #!/bin/bash
-# #PBS -q workq
-# #PBS -N dgnettest-pbs
-# #PBS -j oe
-# #PBS -l walltime=0:20:00
-
-# PPN=4
-
-# cd $PBS_O_WORKDIR
-
-# NODES=$(wc -l $PBS_NODEFILE | awk '{print $1}')
-
-# NP=$((NODES * PPN))
-
-# module load cray-pals
-
-# mpiexec --ppn $PPN --np $NP /usr/local/diag/bin/nettest -p $PPN -r auto -s 16 -m $((512 * 1024)) -t 120 -T 0.99 bisect
+echo "# ${status} at $(date)" | tee -a ${logfile}

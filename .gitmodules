@@ -1,3 +1,7 @@
 [submodule "stress-ng"]
 	path = stress-ng
 	url = https://github.com/ColinIanKing/stress-ng.git
+[submodule "eigen"]
+	path = eigen
+	url = https://gitlab.com/libeigen/eigen
+	branch = 3.4

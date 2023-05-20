@@ -1,15 +1,15 @@
 njobs ?= 10
 
 runpt2pt:
-	for nn in 2 4 8 16 32 64 128 256; do \
-	  for ppn in 1 2 4 8 16 32 64 120 128 128; do \
+	for nn in 2 4 8 16 32 64 128 256 512 1024; do \
+	  for ppn in 1 8 16 32 64 120 128 128; do \
 	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -l select=$${ss} round_robin.pbs ; \
 	  done ; \
 	done
 
 runalltoall:
-	for nn in 2 4 8 16 32 64 128 256; do \
-	  for ppn in 1 2 4 8 16 32 64 120 128 128; do \
+	for nn in 2 4 8 16 32 64 128 256 512 1024; do \
+	  for ppn in 16 32 64 120 128 128; do \
 	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -l select=$${ss} alltoall.pbs ; \
 	  done ; \
 	done
@@ -24,6 +24,12 @@ stress-ng/stress-ng:
 	git submodule update --init --recursive
 	git clean -xdf stress-ng
 	make CC=/usr/bin/gcc -C stress-ng -j 24
+
+eigen/INSTALL:
+	git submodule add -b 3.4 https://gitlab.com/libeigen/eigen
+
+dense_matmul: dense_matmul.C eigen/INSTALL
+	mpicxx -o $@ $< -O3 -I$$(pwd)/eigen -fopenmp
 
 netgauge/$(NCAR_BUILD_ENV):
 	top_dir=$$(pwd) ; \

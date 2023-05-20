@@ -4,3 +4,5 @@ log-*
 netgauge/
 pt2pt/
 *logs/
+*.log*
+results-*
