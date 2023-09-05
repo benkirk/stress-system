@@ -3,7 +3,7 @@
 #PBS -q main
 #PBS -j oe
 #PBS -k oed
-#PBS -l walltime=04:00:00
+#PBS -l walltime=00:05:00
 #PBS -l select=10:ncpus=128:mpiprocs=128:mem=200G
 
 ### Set temp to scratch
@@ -14,17 +14,16 @@ nnodes=$(cat ${PBS_NODEFILE} | sort | uniq | wc -l)
 nranks=$(cat ${PBS_NODEFILE} | sort | wc -l)
 nranks_per_node=$((${nranks} / ${nnodes}))
 
-exec="round_robin_pt2pt.exe.${PBS_JOBID}"
-mpicxx -o ${exec} /glade/u/home/benkirk/round_robin_pt2pt.C || exit 1
+exec="mpi_init_finalize.exe.${PBS_JOBID}"
+mpicc -o ${exec} /glade/u/home/benkirk/mpi_init_finalize.c || exit 1
 
+
+export MPICH_ENV_DISPLAY=1
 export MPICH_OFI_VERBOSE=1
-#export MPICH_OFI_NIC_VERBOSE=2
-#export MPICH_OFI_CXI_COUNTER_REPORT=3
-#export MPICH_OFI_CXI_COUNTER_VERBOSE=1
 export MPICH_MEMORY_REPORT=1
 
 mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
-        ./${exec} | tee pt2pt-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log
+        ./${exec} | tee startup-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log
 
 rm -f ${exec}
 

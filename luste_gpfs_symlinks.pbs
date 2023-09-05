@@ -1,0 +1,106 @@
+#!/bin/bash
+#PBS -A SCSG0001
+#PBS -q main
+#PBS -j oe
+#PBS -k oed
+#PBS -J 1-100
+#PBS -l walltime=00:15:00
+#PBS -l select=1:ncpus=128:mpiprocs=128:mem=200G
+
+### Set temp to scratch
+[[ "x${TMPDIR}" == "x" ]] && export TMPDIR=${SCRATCH}/tmp && mkdir -p ${TMPDIR}
+
+#nodeslist=( $(cat ${PBS_NODEFILE} | sort | uniq | cut -d'.' -f1) )
+#nnodes=$(cat ${PBS_NODEFILE} | sort | uniq | wc -l)
+#nranks=$(cat ${PBS_NODEFILE} | sort | wc -l)
+#nranks_per_node=$((${nranks} / ${nnodes}))
+
+
+
+#input_data_dir=${WORK}/tmp_input
+#input_data_dir=/glade/cheyenne/scratch/${USER}/tmp_input
+input_data_dir=${HOME}/tmp_input
+input_data_symlink=${SCRATCH}/tmp_input
+
+
+
+read_files_localhost ()
+{
+    cd ${input_data_symlink} || exit 1
+
+    for file in ${input_data_symlink}/*; do
+        #ls -l ${file} || exit 1
+        #ssh $(hostname) "dd status=none if=${file} of=/dev/null bs=1M >/dev/null" &
+        python -c "f=open('${file}','rb'); f.read();" &
+        dd status=none if=${file} of=/dev/null bs=1M &
+    done
+    wait
+}
+
+read_files_pbshosts ()
+{
+    [[ "x${PBS_NODEFILE}" == "x" ]] && return
+
+    cd ${input_data_symlink} || exit 1
+    rm -f errors.out
+    for file in ${input_data_symlink}/*; do
+        for node in $(cat ${PBS_NODEFILE} | sort); do
+            ssh ${node} "dd status=none if=${file} of=/dev/null bs=1M" >> errors.out 2>&1 &
+        done
+        wait
+    done
+    # report anything other than 'pbs_attach' from the errors list
+    grep -v "pbs_attach" errors.out
+}
+
+
+# make some temporary input files
+
+mkdir -p ${input_data_dir}
+input_data_dir=$(mktemp -d --tmpdir=${input_data_dir})
+cd ${input_data_dir} && pwd || exit 1
+
+for cnt in $(seq 0 9); do
+    dd status=none if=/dev/zero of=${cnt}.dat bs=1k count=1 || exit 1
+done
+
+# (1) read the temporary files
+mkdir -p ${input_data_symlink}
+input_data_symlink=$(mktemp -d --tmpdir=${input_data_symlink})
+cd ${input_data_symlink} && pwd || exit 1
+
+for file in ${input_data_dir}/*; do
+    ln -sf ${file} . || exit 1
+done
+ls -l ${input_data_symlink}/* || exit 1
+
+for step in $(seq 1 20); do
+    #echo ${step}
+    read_files_localhost &
+done
+wait
+
+read_files_pbshosts
+wait
+
+rm -f ${input_data_symlink}/* || exit 1
+
+# (2) existing data
+input_data_dir="/glade/work/csgteam/AWT/apps/nwsc3/wrf"
+[ -d ${input_data_dir} ] || exit 1
+for file in ${input_data_dir}/*; do
+    [ -f ${file} ] || continue
+    ln -sf ${file} . || exit 1
+done
+ls -l ${input_data_symlink}/* || exit 1
+
+for step in $(seq 1 20); do
+    #echo ${step}
+    read_files_localhost &
+done
+wait
+
+read_files_pbshosts
+wait
+
+echo "# DONE at $(date)"

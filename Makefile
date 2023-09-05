@@ -1,16 +1,30 @@
 njobs ?= 10
 
+runstartup:
+	for nn in 512 1024 1536 2048; do \
+	  for ppn in 16 32 64 128; do \
+	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q system -l select=$${ss} startup.pbs ; \
+	  done ; \
+	done
+
 runpt2pt:
-	for nn in 2 4 8 16 32 64 128 256 512 1024; do \
+	for nn in 2 4 8 16 32 64 128 256 512; do \
 	  for ppn in 1 8 16 32 64 120 128 128; do \
-	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -l select=$${ss} round_robin.pbs ; \
+	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q system -l select=$${ss} round_robin.pbs ; \
 	  done ; \
 	done
 
 runalltoall:
 	for nn in 2 4 8 16 32 64 128 256 512 1024; do \
-	  for ppn in 16 32 64 120 128 128; do \
-	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -l select=$${ss} alltoall.pbs ; \
+	  for ppn in 4 8 16 32 64 120 128 128; do \
+	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q system -l select=$${ss} alltoall.pbs ; \
+	  done ; \
+	done
+
+runallreduce:
+	for nn in 2 4 8 16 32 64 128 256 512 1024; do \
+	  for ppn in 4 8 16 32 64 120 128 128; do \
+	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q system -l select=$${ss} allreduce.pbs ; \
 	  done ; \
 	done
 
@@ -47,8 +61,18 @@ clobber:
 	git clean -xdf --exclude "*/"
 
 qdelall:
-	qdel $$(qstat -u $${USER} 2>/dev/null | grep ".desched" | egrep "round|alltoall|stressng" | cut -d'.' -f1)
+	qdel $$(qstat -u $${USER} 2>/dev/null | grep ".desch" | egrep "startup|round|alltoall|allreduce|stressng" | cut -d'.' -f1)
 
+
+results-startup:
+	for file in startup-nr*.log; do \
+	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
+	  [ -f $${file} ] && echo $${file} || continue ; \
+	  grep "# --> END execution" $${file} >/dev/null 2>&1 || continue ; \
+	  awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' $${file} > $${file}.csv ; \
+	  cp $${file}.csv results-$${stub}.latest.csv ; \
+	done
+	grep "Slowest" startup-nr*.log
 
 results-pt2pt:
 	for file in pt2pt-nr*.log; do \
@@ -71,3 +95,15 @@ results-alltoall:
 	grep "MPICH Slingshot Network Summary" alltoall-nr*.log
 	grep "avg_time" alltoall-nr*.log
 	grep "Slowest" alltoall-nr*.log
+
+results-allreduce:
+	for file in allreduce-nr*.log; do \
+	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
+	  [ -f $${file} ] && echo $${file} || continue ; \
+	  grep "# --> END execution" $${file} >/dev/null 2>&1 || continue ; \
+	  awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' $${file} > $${file}.txt ; \
+	  cp $${file}.txt results-$${stub}.latest.txt ; \
+	done
+	grep "MPICH Slingshot Network Summary" allreduce-nr*.log
+	grep "avg_time" allreduce-nr*.log
+	grep "Slowest" allreduce-nr*.log
