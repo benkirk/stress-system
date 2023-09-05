@@ -15,14 +15,14 @@ nranks=$(cat ${PBS_NODEFILE} | sort | wc -l)
 nranks_per_node=$((${nranks} / ${nnodes}))
 
 exec="mpi_init_finalize.exe.${PBS_JOBID}"
-mpicc -o ${exec} /glade/u/home/benkirk/mpi_init_finalize.c || exit 1
+mpicxx -o ${exec} /glade/u/home/benkirk/mpi_init_finalize.C || exit 1
 
 
 export MPICH_ENV_DISPLAY=1
 export MPICH_OFI_VERBOSE=1
 export MPICH_MEMORY_REPORT=1
 
-mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
+mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --restart --cpu-bind core \
         ./${exec} | tee startup-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log
 
 rm -f ${exec}
