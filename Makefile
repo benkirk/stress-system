@@ -64,16 +64,6 @@ qdelall:
 	qdel $$(qstat -u $${USER} 2>/dev/null | grep ".desch" | egrep "startup|round|alltoall|allreduce|stressng" | cut -d'.' -f1)
 
 
-results-startup:
-	for file in startup-nr*.log; do \
-	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
-	  [ -f $${file} ] && echo $${file} || continue ; \
-	  grep "# --> END execution" $${file} >/dev/null 2>&1 || continue ; \
-	  awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' $${file} > $${file}.csv ; \
-	  cp $${file}.csv results-$${stub}.latest.csv ; \
-	done
-	grep "Slowest" startup-nr*.log
-
 results-pt2pt:
 	for file in pt2pt-nr*.log; do \
 	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
@@ -92,7 +82,7 @@ results-alltoall:
 	  awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' $${file} > $${file}.txt ; \
 	  cp $${file}.txt results-$${stub}.latest.txt ; \
 	done
-	grep "MPICH Slingshot Network Summary" alltoall-nr*.log
+	grep "MPICH Slingshot Network Summary" alltoall-nr*.log | grep -v "0 network timeouts" || true
 	grep "avg_time" alltoall-nr*.log
 	grep "Slowest" alltoall-nr*.log
 
@@ -104,6 +94,9 @@ results-allreduce:
 	  awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' $${file} > $${file}.txt ; \
 	  cp $${file}.txt results-$${stub}.latest.txt ; \
 	done
-	grep "MPICH Slingshot Network Summary" allreduce-nr*.log
+	grep "MPICH Slingshot Network Summary" allreduce-nr*.log | grep -v "0 network timeouts" || true
 	grep "avg_time" allreduce-nr*.log
 	grep "Slowest" allreduce-nr*.log
+
+archive_results:
+	mv *.log* *.pbs.o* old/

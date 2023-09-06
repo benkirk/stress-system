@@ -6,3 +6,4 @@ pt2pt/
 *logs/
 *.log*
 results-*
+*.exe.*.*

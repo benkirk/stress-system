@@ -22,7 +22,7 @@ export MPICH_ENV_DISPLAY=1
 export MPICH_OFI_VERBOSE=1
 export MPICH_MEMORY_REPORT=1
 
-mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --restart --cpu-bind core \
+mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
         ./${exec} | tee startup-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log
 
 rm -f ${exec}
