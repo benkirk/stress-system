@@ -1,9 +1,13 @@
 njobs ?= 10
 
+#	for nn in 2048 1536 1024 512; do \
+
 runstartup:
-	for nn in 512 1024 1536 2048; do \
-	  for ppn in 32 64 128; do \
-	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q system -l select=$${ss} startup.pbs ; \
+	for nn in 512 448; do \
+	  for ppn in 128 64 32; do \
+	    for try in 0 1 2; do \
+	      ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q system -l select=$${ss} startup.pbs ; \
+	    done ; \
 	  done ; \
 	done
 
@@ -67,7 +71,6 @@ qdelall:
 results-pt2pt:
 	for file in pt2pt-nr*.log; do \
 	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
-	  [ -f $${file} ] && echo $${file} || continue ; \
 	  grep "# --> END execution" $${file} >/dev/null 2>&1 || continue ; \
 	  awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' $${file} > $${file}.csv ; \
 	  cp $${file}.csv results-$${stub}.latest.csv ; \
@@ -77,7 +80,6 @@ results-pt2pt:
 results-alltoall:
 	for file in alltoall-nr*.log; do \
 	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
-	  [ -f $${file} ] && echo $${file} || continue ; \
 	  grep "# --> END execution" $${file} >/dev/null 2>&1 || continue ; \
 	  awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' $${file} > $${file}.txt ; \
 	  cp $${file}.txt results-$${stub}.latest.txt ; \
@@ -89,7 +91,6 @@ results-alltoall:
 results-allreduce:
 	for file in allreduce-nr*.log; do \
 	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
-	  [ -f $${file} ] && echo $${file} || continue ; \
 	  grep "# --> END execution" $${file} >/dev/null 2>&1 || continue ; \
 	  awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' $${file} > $${file}.txt ; \
 	  cp $${file}.txt results-$${stub}.latest.txt ; \
@@ -97,6 +98,10 @@ results-allreduce:
 	grep "MPICH Slingshot Network Summary" allreduce-nr*.log | grep -v "0 network timeouts" || true
 	grep "avg_time" allreduce-nr*.log
 	grep "Slowest" allreduce-nr*.log
+
+results-failures:
+	pwd
+	egrep "launch failed|RPC timeout|LAUNCH FAILURE" *.pbs.o* # | cut -d ':' -f2
 
 archive_results:
 	mv *.log* *.pbs.o* old/

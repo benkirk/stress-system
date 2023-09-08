@@ -22,8 +22,20 @@ export MPICH_ENV_DISPLAY=1
 export MPICH_OFI_VERBOSE=1
 export MPICH_MEMORY_REPORT=1
 
+set -x
+mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core --no-transfer \
+        /bin/hostname > /dev/null \
+    || echo "LAUNCH FAILURE (/bin/hostname, attempt 1)"
+
 mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
-        ./${exec} | tee startup-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log
+        /bin/hostname > /dev/null \
+    || echo "LAUNCH FAILURE (/bin/hostname, attempt 2)"
+
+mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
+        ./${exec} | tee startup-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log \
+    || echo "LAUNCH FAILURE (mpi_hello_world)"
+
+set +x
 
 rm -f ${exec}
 
