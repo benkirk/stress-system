@@ -24,6 +24,7 @@ export MPICH_OFI_VERBOSE=1
 #export MPICH_OFI_STARTUP_CONNECT=1
 #export MPICH_OFI_DEFAULT_TCLASS=TC_LOW_LATENCY
 export MPICH_MEMORY_REPORT=1
+export MPI_VERBOSE=1
 
 mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
         ./${exec} | tee allreduce-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log

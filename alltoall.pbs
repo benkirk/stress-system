@@ -21,10 +21,11 @@ mpicxx -o ${exec} /glade/u/home/benkirk/alltoall_avg.C || exit 1
 export MPICH_ENV_DISPLAY=1
 export MPICH_GPU_SUPPORT_ENABLED=0
 export MPICH_OFI_VERBOSE=1
-export MPICH_OFI_STARTUP_CONNECT=1
-export MPICH_OFI_DEFAULT_TCLASS=TC_LOW_LATENCY
-export MPICH_ALLTOALL_CHUNKING_MAX_NODES=512
+#export MPICH_OFI_STARTUP_CONNECT=1
+#export MPICH_OFI_DEFAULT_TCLASS=TC_LOW_LATENCY
+#export MPICH_ALLTOALL_CHUNKING_MAX_NODES=512
 export MPICH_MEMORY_REPORT=1
+export MPI_VERBOSE=1
 
 mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
         ./${exec} | tee alltoall-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log

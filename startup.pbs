@@ -1,6 +1,5 @@
 #!/bin/bash
-##PBS -A SCSG0001
-#PBS -A R1331670
+#PBS -A SCSG0001
 #PBS -q main
 #PBS -j oe
 #PBS -k oed
@@ -22,6 +21,7 @@ mpicxx -o ${exec} /glade/u/home/benkirk/mpi_init_finalize.C || exit 1
 export MPICH_ENV_DISPLAY=1
 export MPICH_OFI_VERBOSE=1
 export MPICH_MEMORY_REPORT=1
+export MPI_VERBOSE=1
 
 maxtries=4
 for try in $(seq 1 ${maxtries}); do

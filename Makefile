@@ -1,12 +1,13 @@
 njobs ?= 10
+queue ?= R1331670
 
 #	for nn in 2048 1536 1024 512; do \
 
 runstartup:
-	for nn in 512 448; do \
+	for nn in 512 448 256 128 64 32 16 8 4 2; do \
 	  for ppn in 128 64 32; do \
 	    for try in 0 1 2; do \
-	      ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q system -l select=$${ss} startup.pbs ; \
+	      ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} startup.pbs ; \
 	    done ; \
 	  done ; \
 	done
@@ -14,28 +15,28 @@ runstartup:
 runpt2pt:
 	for nn in 2 4 8 16 32 64 128 256 512; do \
 	  for ppn in 1 8 16 32 64 120 128; do \
-	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q system -l select=$${ss} round_robin.pbs ; \
+	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} round_robin.pbs ; \
 	  done ; \
 	done
 
 runalltoall:
 	for nn in 2 4 8 16 32 64 128 256 512 1024; do \
 	  for ppn in 4 8 16 32 64 120 128; do \
-	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q system -l select=$${ss} alltoall.pbs ; \
+	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} alltoall.pbs ; \
 	  done ; \
 	done
 
 runallreduce:
 	for nn in 2 4 8 16 32 64 128 256 512 1024; do \
 	  for ppn in 4 8 16 32 64 120 128; do \
-	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q system -l select=$${ss} allreduce.pbs ; \
+	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} allreduce.pbs ; \
 	  done ; \
 	done
 
 runmany: stress-ng/stress-ng
 	for j in $$(seq 1 $(njobs)); do \
 	  echo -n "submitting job #$$j: " ; \
-	  qsub ./stressng_test.pbs ; if [ $$(($$j%10)) -eq 0 ]; then sleep 1s; fi ; \
+	  qsub -q $(queue) ./stressng_test.pbs ; if [ $$(($$j%10)) -eq 0 ]; then sleep 1s; fi ; \
 	done
 
 stress-ng/stress-ng:
