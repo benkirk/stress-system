@@ -101,7 +101,9 @@ results-allreduce:
 
 results-failures:
 	pwd
-	egrep "launch failed|RPC timeout|LAUNCH FAILURE" *.pbs.o* # | cut -d ':' -f2
+	egrep "launch failed|RPC timeout|LAUNCH FAILURE" *.pbs.o* | grep -v "+ echo" | sort | uniq  # | cut -d ':' -f2
 
 archive_results:
-	mv *.log* *.pbs.o* old/
+	timestamp=$$(date +%F@%H:%M) ; \
+	mkdir -p logs/$${timestamp} ; \
+	mv *.log* *.pbs.o* logs/$${timestamp}
