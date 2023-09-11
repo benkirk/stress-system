@@ -1,10 +1,10 @@
 njobs ?= 10
-queue ?= R1331670
+queue ?= system
 
 #	for nn in 2048 1536 1024 512; do \
 
 runstartup:
-	for nn in 512 448 256 128 64 32 16 8 4 2; do \
+	for nn in 512 448 256; do \
 	  for ppn in 128 64 32; do \
 	    for try in 0 1 2; do \
 	      ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} startup.pbs ; \
@@ -20,14 +20,14 @@ runpt2pt:
 	done
 
 runalltoall:
-	for nn in 2 4 8 16 32 64 128 256 512 1024; do \
+	for nn in 2 4 8 16 32 64 128 256 512; do \
 	  for ppn in 4 8 16 32 64 120 128; do \
 	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} alltoall.pbs ; \
 	  done ; \
 	done
 
 runallreduce:
-	for nn in 2 4 8 16 32 64 128 256 512 1024; do \
+	for nn in 2 4 8 16 32 64 128 256 512; do \
 	  for ppn in 4 8 16 32 64 120 128; do \
 	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} allreduce.pbs ; \
 	  done ; \
@@ -76,6 +76,7 @@ results-pt2pt:
 	  awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' $${file} > $${file}.csv ; \
 	  cp $${file}.csv results-$${stub}.latest.csv ; \
 	done
+	grep "MPICH Slingshot Network Summary" pt2pt-nr*.log | grep -v "0 network timeouts" || true
 	grep "Slowest" pt2pt-nr*.log
 
 results-alltoall:
@@ -101,8 +102,8 @@ results-allreduce:
 	grep "Slowest" allreduce-nr*.log
 
 results-failures:
-	pwd
-	egrep "launch failed|RPC timeout|LAUNCH FAILURE" *.pbs.o* | grep -v "+ echo" | sort | uniq  # | cut -d ':' -f2
+	@pwd
+	@egrep "launch failed|RPC timeout|LAUNCH FAILURE" *.pbs.o* | grep -v "+ echo" | sort | uniq  # | cut -d ':' -f2
 
 archive_results:
 	timestamp=$$(date +%F@%H:%M) ; \
