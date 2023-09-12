@@ -18,6 +18,7 @@ exec="alltoall_avg.exe.${PBS_JOBID}"
 mpicxx -o ${exec} /glade/u/home/benkirk/alltoall_avg.C || exit 1
 
 
+export PALS_FANOUT=32
 export MPICH_ENV_DISPLAY=1
 export MPICH_GPU_SUPPORT_ENABLED=0
 export MPICH_OFI_VERBOSE=1
@@ -31,9 +32,9 @@ maxtries=4
 for try in $(seq 1 ${maxtries}); do
     set -x
     mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
-            ./${exec} | tee alltoall-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log \
-        && break
+            ./${exec} | tee alltoall-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log
     set +x
+    [[ ${PIPESTATUS[0]} == 0 ]] && break
     echo "LAUNCH FAILURE (${exec}, attempt ${try} of ${maxtries})"
 done
 

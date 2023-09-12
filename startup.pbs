@@ -18,6 +18,7 @@ exec="mpi_init_finalize.exe.${PBS_JOBID}"
 mpicxx -o ${exec} /glade/u/home/benkirk/mpi_init_finalize.C || exit 1
 
 
+export PALS_FANOUT=32
 export MPICH_ENV_DISPLAY=1
 export MPICH_OFI_VERBOSE=1
 export MPICH_MEMORY_REPORT=1

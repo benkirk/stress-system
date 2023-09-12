@@ -13,7 +13,7 @@ runstartup:
 	done
 
 runpt2pt:
-	for nn in 2 4 8 16 32 64 128 256 512; do \
+	for nn in 2 4 8 16 32 64 128; do \
 	  for ppn in 1 8 16 32 64 120 128; do \
 	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} round_robin.pbs ; \
 	  done ; \
