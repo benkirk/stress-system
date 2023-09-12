@@ -29,8 +29,8 @@ for try in $(seq 1 ${maxtries}); do
     set -x
     mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
             ./${exec} | tee pt2pt-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log
-    set +x
     [[ ${PIPESTATUS[0]} == 0 ]] && break
+    set +x
     echo "LAUNCH FAILURE (${exec}, attempt ${try} of ${maxtries})"
 done
 
