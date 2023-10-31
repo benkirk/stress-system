@@ -4,8 +4,8 @@ queue ?= system
 #	for nn in 2048 1536 1024 512; do \
 
 runstartup:
-	for nn in 512 448 256; do \
-	  for ppn in 128 64 32; do \
+	for nn in 512 448 384 256; do \
+	  for ppn in 128; do \
 	    for try in 0 1 2; do \
 	      ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} startup.pbs ; \
 	    done ; \
@@ -20,14 +20,14 @@ runpt2pt:
 	done
 
 runalltoall:
-	for nn in 2 4 8 16 32 64 128 256 512; do \
+	for nn in 2 4 8 16 32 64 128 256 384 512; do \
 	  for ppn in 4 8 16 32 64 120 128; do \
 	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} alltoall.pbs ; \
 	  done ; \
 	done
 
 runallreduce:
-	for nn in 2 4 8 16 32 64 128 256 512; do \
+	for nn in 2 4 8 16 32 64 128 256 384 512; do \
 	  for ppn in 4 8 16 32 64 120 128; do \
 	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=200G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} allreduce.pbs ; \
 	  done ; \
@@ -108,4 +108,5 @@ results-failures:
 archive_results:
 	timestamp=$$(date +%F@%H:%M) ; \
 	mkdir -p logs/$${timestamp} ; \
-	mv *.log* *.pbs.o* logs/$${timestamp}
+	mv *.log* *.pbs.o* logs/$${timestamp} ; \
+	mv *.latest.txt logs/$${timestamp}
