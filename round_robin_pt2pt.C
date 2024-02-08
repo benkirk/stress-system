@@ -16,8 +16,9 @@ int main (int argc, char **argv)
 
   const std::size_t
     bufcnt =  1000*1000,
-    bufsize = bufcnt*(sizeof(unsigned int)),
-    nrep = 4;
+    itemsize = sizeof(unsigned int),
+    bufsize = bufcnt*itemsize,
+    nrep = 3;
 
   std::set<std::string> unique_hosts;
 
@@ -89,8 +90,8 @@ int main (int argc, char **argv)
   for (unsigned int i=myrank, j=0; j<bufcnt; i++, j++)
     sbuf.push_back(i);
 
-  std::vector<double>
-    recv(nranks,0.), allrecv(nranks*nranks,0.);
+  std::vector<float>
+    recv(nranks,0.), allrecv; // allrecv(nranks*nranks,0.);
 
   MPI_Request sreqs[2], rreqs[2];
   MPI_Status status;
@@ -162,7 +163,7 @@ int main (int argc, char **argv)
                   << ", " << std::setw(5) << procup
                   << ", " << std::setw(5) << procdn
                   << " / " << std::setw(12) << total_elapsed << "\t (sec)"
-                  << " / " << std::setw(12) << static_cast<double>(4*bufsize) / total_elapsed << " (bytes/sec)\n";
+                  << " / " << std::setw(12) << static_cast<double>(itemsize*bufsize) / total_elapsed << " (bytes/sec)\n";
     }
 
   // compute average over 2*nrep - in the ring above, we hit 2 pairs per loop
@@ -173,9 +174,13 @@ int main (int argc, char **argv)
   {
     const double starttime = MPI_Wtime();
 
-    MPI_Allgather(&recv[0],    nranks, MPI_DOUBLE,
-                  &allrecv[0], nranks, MPI_DOUBLE,
-                  MPI_COMM_WORLD);
+    if (0 == myrank)
+      allrecv.resize(nranks*nranks);
+
+    MPI_Gather(                &recv[0],           nranks, MPI_FLOAT,
+               (0 == myrank) ? &allrecv[0] : NULL, nranks, MPI_FLOAT,
+               /* root = */ 0,
+               MPI_COMM_WORLD);
 
     const double elapsed = (MPI_Wtime() - starttime);
 
@@ -185,7 +190,7 @@ int main (int argc, char **argv)
 
     if (0 == myrank)
       {
-        std::cout << "# MPI_Allgather() on "
+        std::cout << "# MPI_Gather() on "
                   << nranks << " ranks required " << elapsed << " (sec)\n";
 
         for (unsigned int i=0; i<nranks; ++i)
@@ -199,7 +204,7 @@ int main (int argc, char **argv)
           }
 
         std::cout << "# Slowest Step: t_max = " << global_t_max << " (sec), "
-                  << static_cast<double>(4*bufsize) / global_t_max <<  " (bytes/sec)\n"
+                  << static_cast<double>(itemsize*bufsize) / global_t_max <<  " (bytes/sec)\n"
                   << "# --> END execution" << std::endl;
       }
   }

@@ -17,7 +17,7 @@ nranks=$(cat ${PBS_NODEFILE} | sort | wc -l)
 nranks_per_node=$((${nranks} / ${nnodes}))
 
 exec="allreduce_avg.exe.${PBS_JOBID}"
-mpicxx -o ${exec} /glade/u/home/benkirk/allreduce_avg.C || exit 1
+mpicxx -o ${exec} allreduce_avg.C || exit 1
 
 export PALS_FANOUT=32
 export MPICH_ENV_DISPLAY=1

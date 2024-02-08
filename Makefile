@@ -14,7 +14,7 @@ runstartup:
 	done
 
 runpt2pt:
-	for nn in 2 4 8 16 32; do \
+	for nn in 2 4 8 16 32 64 96 128; do \
 	  for ppn in 1 8 16 32 64 120 128; do \
 	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=235G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} round_robin.pbs ; \
 	  done ; \
@@ -72,6 +72,7 @@ qdelall:
 
 results-pt2pt:
 	for file in pt2pt-nr*.log.xz; do \
+	  ls -lh $${file} ; \
 	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
 	  csv=$${file/".log.xz"/".csv.xz"} ; \
 	  xzgrep "# --> END execution" $${file} >/dev/null 2>&1 || continue ; \
@@ -83,6 +84,7 @@ results-pt2pt:
 
 results-alltoall:
 	for file in alltoall-nr*.log.xz; do \
+	  ls -lh $${file} ; \
 	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
 	  txt=$${file/".log.xz"/".txt.xz"} ; \
 	  xzgrep "# --> END execution" $${file} >/dev/null 2>&1 || continue ; \
@@ -95,6 +97,7 @@ results-alltoall:
 
 results-allreduce:
 	for file in allreduce-nr*.log.xz; do \
+	  ls -lh $${file} ; \
 	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
 	  txt=$${file/".log.xz"/".txt.xz"} ; \
 	  xzgrep "# --> END execution" $${file} >/dev/null 2>&1 || continue ; \
