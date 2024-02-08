@@ -35,6 +35,7 @@ int main (int argc, char **argv)
                         MPI_INFO_NULL, &shmcomm);
     MPI_Comm_size(shmcomm, &nlocalranks);
     MPI_Comm_rank(shmcomm, &mylocalrank);
+    MPI_Comm_free(&shmcomm);
 
     char hn[64];
     gethostname(hn, sizeof(hn) / sizeof(char));
