@@ -5,5 +5,7 @@ netgauge/
 pt2pt/
 *logs/
 *.log*
+*.txt.*
+*.csv.*
 results-*
 *.exe.*.*

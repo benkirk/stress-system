@@ -9,6 +9,8 @@
 ### Set temp to scratch
 [[ "x${TMPDIR}" == "x" ]] && export TMPDIR=${SCRATCH}/tmp && mkdir -p ${TMPDIR}
 
+module load peak-memusage
+
 nodeslist=( $(cat ${PBS_NODEFILE} | sort | uniq | cut -d'.' -f1) )
 nnodes=$(cat ${PBS_NODEFILE} | sort | uniq | wc -l)
 nranks=$(cat ${PBS_NODEFILE} | sort | wc -l)
@@ -17,22 +19,20 @@ nranks_per_node=$((${nranks} / ${nnodes}))
 exec="round_robin_pt2pt.exe.${PBS_JOBID}"
 mpicxx -o ${exec} /glade/u/home/benkirk/round_robin_pt2pt.C || exit 1
 
-export PALS_FANOUT=32
+#export PALS_FANOUT=32
 export MPICH_OFI_VERBOSE=1
 #export MPICH_OFI_NIC_VERBOSE=2
 #export MPICH_OFI_CXI_COUNTER_REPORT=3
 #export MPICH_OFI_CXI_COUNTER_VERBOSE=1
 export MPICH_MEMORY_REPORT=1
 
-maxtries=4
-for try in $(seq 1 ${maxtries}); do
-    set -x
-    mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
-            ./${exec} | tee pt2pt-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log
-    [[ ${PIPESTATUS[0]} == 0 ]] && break
-    set +x
-    echo "LAUNCH FAILURE (${exec}, attempt ${try} of ${maxtries})"
-done
+set -x
+mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
+        peak_memusage ./${exec} | xz > pt2pt-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log.xz.tmp
+
+[[ ${PIPESTATUS[0]} == 0 ]] \
+    && mv pt2pt-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log.xz{.tmp,} \
+    || echo "LAUNCH FAILURE (${exec})"
 
 rm -f ${exec}
 

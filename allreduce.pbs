@@ -9,6 +9,8 @@
 ### Set temp to scratch
 [[ "x${TMPDIR}" == "x" ]] && export TMPDIR=${SCRATCH}/tmp && mkdir -p ${TMPDIR}
 
+module load peak-memusage
+
 nodeslist=( $(cat ${PBS_NODEFILE} | sort | uniq | cut -d'.' -f1) )
 nnodes=$(cat ${PBS_NODEFILE} | sort | uniq | wc -l)
 nranks=$(cat ${PBS_NODEFILE} | sort | wc -l)
@@ -16,7 +18,6 @@ nranks_per_node=$((${nranks} / ${nnodes}))
 
 exec="allreduce_avg.exe.${PBS_JOBID}"
 mpicxx -o ${exec} /glade/u/home/benkirk/allreduce_avg.C || exit 1
-
 
 export PALS_FANOUT=32
 export MPICH_ENV_DISPLAY=1
@@ -27,15 +28,13 @@ export MPICH_OFI_VERBOSE=1
 export MPICH_MEMORY_REPORT=1
 export MPI_VERBOSE=1
 
-maxtries=4
-for try in $(seq 1 ${maxtries}); do
-    set -x
-    mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
-            ./${exec} | tee allreduce-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log
-    [[ ${PIPESTATUS[0]} == 0 ]] && break
-    set +x
-    echo "LAUNCH FAILURE (${exec}, attempt ${try} of ${maxtries})"
-done
+set -x
+mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
+        peak_memusage ./${exec} | xz > allreduce-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log.xz.tmp
+
+[[ ${PIPESTATUS[0]} == 0 ]] \
+    && mv allreduce-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log.xz{.tmp,} \
+    || echo "LAUNCH FAILURE (${exec})"
 
 rm -f ${exec}
 
