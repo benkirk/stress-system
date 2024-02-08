@@ -17,7 +17,7 @@ int main (int argc, char **argv)
   const std::size_t
     bufcnt =  1000*1000,
     bufsize = bufcnt*(sizeof(unsigned int)),
-    nrep = 10;
+    nrep = 4;
 
   std::set<std::string> unique_hosts;
 

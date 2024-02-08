@@ -110,11 +110,11 @@ int main (int argc, char **argv)
 
   while ((++step < maxstep) && (all_done == 0))
     {
-      std::fill (sbuf.begin(), sbuf.end(), step + myrank);
+      std::fill (sbuf.begin(), sbuf.end(), step*nranks + myrank);
 
       const double starttime_step = MPI_Wtime();
 
-      MPI_Allreduce (&sbuf[0], &rbuf[0], bufcnt, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+      MPI_Allreduce (&sbuf[0], &rbuf[0], bufcnt, MPI_UNSIGNED, MPI_MAX, MPI_COMM_WORLD);
 
       // update timers & averages for this step
       const double elapsedtime_step = (MPI_Wtime() - starttime_step);
@@ -139,7 +139,7 @@ int main (int argc, char **argv)
 
       // check correctness (first few elem), c.f. https://study.com/learn/lesson/sum-of-arithmetic-sequence-formula-examples-what-is-arithmetic-sequence.html
       for (unsigned int c=0; c<std::min(4,(int)bufcnt); c++)
-        assert(rbuf[c] == step*nranks + (nranks*(nranks - 1)/2));
+        assert(rbuf[c] == step*nranks + (nranks-1));
     }
   //----------------------------------------------------------------
 
