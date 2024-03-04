@@ -21,7 +21,7 @@ runpt2pt:
 	done
 
 run%:
-	for nn in 2 4 8 16 32; do \
+	for nn in 2 4 8 16 32 64 96 128 256 384 512; do \
 	  for ppn in 4 8 16 32 64 120 128; do \
 	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=235G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} $*.pbs ; \
 	  done ; \
