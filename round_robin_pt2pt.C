@@ -15,10 +15,10 @@ int main (int argc, char **argv)
   int nranks, myrank, mylocalrank;
 
   const std::size_t
-    bufcnt =  1000*1000,
     itemsize = sizeof(unsigned int),
+    bufcnt =  1000*1000 / itemsize,
     bufsize = bufcnt*itemsize,
-    nrep = 3;
+    nrep = 4;
 
   std::set<std::string> unique_hosts;
 
@@ -68,21 +68,14 @@ int main (int argc, char **argv)
                   << "# nranks = " << nranks << "\n"
                   << "# MPI_Wtick() = " << MPI_Wtick() << "\n";
 
-        for (unsigned int idx=0, cnt=0; cnt<nranks; cnt++, idx+=64)
-          {
-            std::cout << std::string(&hns[idx]);
-
-            (cnt != (nranks-1)) ? std::cout << ", " : std::cout << "\n";
-          }
-
         std::cout << "# unique hosts (" << unique_hosts.size() << "): ";
         for (auto it=unique_hosts.begin(); it!=unique_hosts.end(); ++it)
           std::cout << *it << " ";
         std::cout << "\n";
 
         std::cout << "# bufcnt  = " << bufcnt  << " (elements)\n"
-                  << "# bufsize = " << bufsize << " (bytes)\n"
-                  << "# myrank, procup, procdn=\n";
+                  << "# bufsize = " << bufsize << " (bytes)\n";
+        //          << "# myrank, procup, procdn=\n";
       }
   }
 
@@ -91,8 +84,7 @@ int main (int argc, char **argv)
   for (unsigned int i=myrank, j=0; j<bufcnt; i++, j++)
     sbuf.push_back(i);
 
-  std::vector<float>
-    recv(nranks,0.), allrecv; // allrecv(nranks*nranks,0.);
+  std::vector<float> recv(nranks,0.); // <-- timings buffer
 
   MPI_Request sreqs[2], rreqs[2];
   MPI_Status status;
@@ -158,13 +150,13 @@ int main (int argc, char **argv)
       // compute average over nrep
       total_elapsed /= static_cast<double>(nrep);
 
-      if (0 == myrank)
-        std::cout << "# "
-                  << std::setw(5) << myrank
-                  << ", " << std::setw(5) << procup
-                  << ", " << std::setw(5) << procdn
-                  << " / " << std::setw(12) << total_elapsed << "\t (sec)"
-                  << " / " << std::setw(12) << static_cast<double>(itemsize*bufsize) / total_elapsed << " (bytes/sec)\n";
+      // if (0 == myrank)
+      //   std::cout << "# "
+      //             << std::setw(5) << myrank
+      //             << ", " << std::setw(5) << procup
+      //             << ", " << std::setw(5) << procdn
+      //             << " / " << std::setw(12) << total_elapsed << "\t (sec)"
+      //             << " / " << std::setw(12) << static_cast<double>(itemsize*bufsize) / total_elapsed << " (bytes/sec)\n";
     }
 
   // compute average over 2*nrep - in the ring above, we hit 2 pairs per loop
@@ -173,45 +165,50 @@ int main (int argc, char **argv)
 
   // gather timing for all pairs
   {
-    const double starttime = MPI_Wtime();
-
-    if (0 == myrank)
-      allrecv.resize(nranks*nranks);
-
-    MPI_Gather(                &recv[0],           nranks, MPI_FLOAT,
-               (0 == myrank) ? &allrecv[0] : NULL, nranks, MPI_FLOAT,
-               /* root = */ 0,
-               MPI_COMM_WORLD);
-
-    const double elapsed = (MPI_Wtime() - starttime);
-
     double global_t_max=local_t_max;
 
-    MPI_Allreduce(&local_t_max, &global_t_max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Reduce(&local_t_max, &global_t_max, 1, MPI_DOUBLE, MPI_MAX, /* rank = */ 0, MPI_COMM_WORLD);
 
+    // table header row
     if (0 == myrank)
-      {
-        std::cout << "# MPI_Gather() on "
-                  << nranks << " ranks required " << elapsed << " (sec)\n";
+      for (unsigned int cnt=0; cnt<nranks; cnt++)
+        {
+          std::cout << std::string(&hns[cnt*64]);
+          (cnt != (nranks-1)) ? std::cout << ", " : std::cout << "\n";
+        }
 
-        for (unsigned int i=0; i<nranks; ++i)
+    // table rows
+    for (unsigned int i=0; i<nranks; ++i)
+      {
+        if (0 == myrank)
+          std::cout << std::string(&hns[i*64]) << ", ";
+
+        // first row, i==0 --> myrank==0 and we have the data already,
+        // else collect & overwrire recv[].
+        if (0 != i)
           {
-            std::cout << std::string(&hns[i*64]) << ", ";
-            for (unsigned int j=0; j<nranks; ++j)
-              {
-                std::cout << std::setprecision(8) << allrecv[j*nranks + i];
-                (j != (nranks-1)) ? std::cout << ", " : std::cout << "\n";
-              }
+            if (i == myrank)
+              MPI_Send(&recv[0], nranks, MPI_FLOAT, /* dest = */ 0, /* tag = */ 314159, MPI_COMM_WORLD);
+            else if (0 == myrank)
+              MPI_Recv(&recv[0], nranks, MPI_FLOAT, /* src = */  i, /* tag = */ 314159, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
           }
 
-        std::cout << "# Slowest Step: t_max = " << global_t_max << " (sec), "
-                  << static_cast<double>(itemsize*bufsize) / global_t_max <<  " (bytes/sec)\n"
-                  << "# --> END execution" << std::endl;
+        // table columns
+        if (0 == myrank)
+          for (unsigned int j=0; j<nranks; ++j)
+            {
+              std::cout << std::setprecision(6) << recv[j];
+              (j != (nranks-1)) ? std::cout << ", " : std::cout << "\n";
+            }
       }
+
+    if (0 == myrank)
+      std::cout << "# Slowest Step: t_max = " << global_t_max << " (sec), "
+                << static_cast<double>(itemsize*bufsize) / global_t_max <<  " (bytes/sec)\n"
+                << "# --> END execution" << std::endl;
   }
 
   MPI_Finalize();
-
 
   return 0;
 }

@@ -3,7 +3,7 @@
 #PBS -q main
 #PBS -j oe
 #PBS -k oed
-#PBS -l walltime=00:13:00
+#PBS -l walltime=00:30:00
 #PBS -l select=10:ncpus=128:mpiprocs=128:mem=200G
 
 ### Set temp to scratch
@@ -16,8 +16,8 @@ nnodes=$(cat ${PBS_NODEFILE} | sort | uniq | wc -l)
 nranks=$(cat ${PBS_NODEFILE} | sort | wc -l)
 nranks_per_node=$((${nranks} / ${nnodes}))
 
-exec="alltoall_avg.exe.${PBS_JOBID}"
-mpicxx -o ${exec} alltoall_avg.C || exit 1
+exec="alltoallv_avg.exe.${PBS_JOBID}"
+mpicxx -o ${exec} alltoallv_avg.C || exit 1
 
 export PALS_FANOUT=32
 export MPICH_ENV_DISPLAY=1
@@ -28,7 +28,7 @@ export MPICH_OFI_VERBOSE=1
 #export MPICH_ALLTOALL_CHUNKING_MAX_NODES=512
 export MPICH_MEMORY_REPORT=1
 export MPI_VERBOSE=1
-logfile="alltoall-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log.xz"
+logfile="alltoallv-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log.xz"
 
 set -x
 mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \

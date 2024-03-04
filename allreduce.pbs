@@ -9,7 +9,7 @@
 ### Set temp to scratch
 [[ "x${TMPDIR}" == "x" ]] && export TMPDIR=${SCRATCH}/tmp && mkdir -p ${TMPDIR}
 
-module load peak-memusage
+[ -f config_env.sh ] && . config_env.sh
 
 nodeslist=( $(cat ${PBS_NODEFILE} | sort | uniq | cut -d'.' -f1) )
 nnodes=$(cat ${PBS_NODEFILE} | sort | uniq | wc -l)
@@ -27,13 +27,14 @@ export MPICH_OFI_VERBOSE=1
 #export MPICH_OFI_DEFAULT_TCLASS=TC_LOW_LATENCY
 export MPICH_MEMORY_REPORT=1
 export MPI_VERBOSE=1
+logfile="allreduce-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log.xz"
 
 set -x
 mpiexec -n ${nranks} -ppn ${nranks_per_node} --verbose --cpu-bind core \
-        peak_memusage ./${exec} | xz > allreduce-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log.xz.tmp
+        peak_memusage ./${exec} | xz > ${logfile}.tmp
 
 [[ ${PIPESTATUS[0]} == 0 ]] \
-    && mv allreduce-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log.xz{.tmp,} \
+    && mv ${logfile}{.tmp,} \
     || echo "LAUNCH FAILURE (${exec})"
 
 rm -f ${exec}
