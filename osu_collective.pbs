@@ -38,9 +38,9 @@ for tool in $(find ${TESTS_DIR} -type f -executable -name "osu_alltoall*" | sort
     echo "# nranks = ${nranks}"
     echo "# nranks/node = ${nranks_per_node}"
     echo "# nnodes = ${nnodes}"
-    mpiexec ${tool} -m 65536 -i 1000 || status="FAIL"
+    mpiexec ${tool} -m 65536 -i 500 -x 10 || status="FAIL"
     echo "# --> END execution: $(basename ${tool})"
+    echo && echo && echo
 done
 
-echo && echo && echo
 echo "${status}: Done at $(date)"
