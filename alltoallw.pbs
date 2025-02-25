@@ -3,7 +3,7 @@
 #PBS -q main
 #PBS -j oe
 #PBS -k oed
-#PBS -l walltime=00:30:00
+#PBS -l walltime=00:15:00
 #PBS -l select=10:ncpus=128:mpiprocs=128:mem=200G
 
 ### Set temp to scratch

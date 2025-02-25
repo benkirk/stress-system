@@ -1,14 +1,15 @@
 njobs ?= 10
-queue ?= main
+queue ?= system
+qsub ?= qsub
 
 #	for nn in 2048 1536 1024 512; do \
 # 	for nn in 2 4 8 16 32 64 128 256 384 512; do \
 
 runstartup:
-	for nn in 512 448 384 256; do \
+	for nn in 1024 768 512 384 256 128 64 32 16 8 4 2 1; do \
 	  for ppn in 128; do \
-	    for try in 0 1 2; do \
-	      ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=235G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} startup.pbs ; \
+	    for try in 0 1 2 3; do \
+	      ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=235G" && echo $${ss} && $(qsub) -q $(queue) -l select=$${ss} startup.pbs ; \
 	    done ; \
 	  done ; \
 	done
@@ -16,21 +17,21 @@ runstartup:
 runpt2pt:
 	for nn in 2 4 8 16 32 64 96 128; do \
 	  for ppn in 1 8 16 32 64 120 128; do \
-	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=235G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} round_robin.pbs ; \
+	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=235G" && echo $${ss} && $(qsub) -q $(queue) -l select=$${ss} round_robin.pbs ; \
 	  done ; \
 	done
 
 run%:
-	for nn in 2 4 8 16 32 64 96 128 256 384 512; do \
-	  for ppn in 4 8 16 32 64 120 128; do \
-	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=235G" && echo $${ss} && qsub -q $(queue) -l select=$${ss} $*.pbs ; \
+	for nn in 2 4 8 16 32 64 96 128 256 384 512 768 1024; do \
+	  for ppn in 4 8 16 32 64 128; do \
+	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=235G" && echo $${ss} && $(qsub) -q $(queue) -l select=$${ss} $*.pbs ; \
 	  done ; \
 	done
 
 runmany: stress-ng/stress-ng
 	for j in $$(seq 1 $(njobs)); do \
 	  echo -n "submitting job #$$j: " ; \
-	  qsub -q $(queue) ./stressng_test.pbs ; if [ $$(($$j%10)) -eq 0 ]; then sleep 1s; fi ; \
+	  $(qsub) -q $(queue) ./stressng_test.pbs ; if [ $$(($$j%10)) -eq 0 ]; then sleep 1s; fi ; \
 	done
 
 stress-ng/stress-ng:
@@ -96,5 +97,5 @@ results-failures:
 archive_results:
 	timestamp=$$(date +%F@%H:%M) ; \
 	mkdir -p logs/$${timestamp} ; \
-	mv *-*.log.* *.pbs.o* logs/$${timestamp} || true; \
+	mv startup*-*.log *-*.log.* *.pbs.o* logs/$${timestamp} || true; \
 	mv *-*.*.xz logs/$${timestamp} || true
