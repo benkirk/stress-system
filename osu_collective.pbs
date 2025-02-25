@@ -7,8 +7,6 @@
 #PBS -l select=10:ncpus=128:mpiprocs=128:mem=200G
 
 [ -f config_env.sh ] && . config_env.sh
-module load osu-micro-benchmarks
-module list
 
 nodeslist=( $(cat ${PBS_NODEFILE} | sort | uniq | cut -d'.' -f1) )
 nnodes=$(cat ${PBS_NODEFILE} | sort | uniq | wc -l)
@@ -22,7 +20,7 @@ nranks_per_node=$((${nranks} / ${nnodes}))
 #export MPI_VERBOSE=1
 logfile="osu_collective-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log"
 
-TESTS_DIR="${NCAR_ROOT_OSU_MICRO_BENCHMARKS}"
+TESTS_DIR="${TESTS_DIR:-${NCAR_ROOT_OSU_MICRO_BENCHMARKS}}"
 
 status="SUCCESS"
 
@@ -34,13 +32,14 @@ echo "------------------------------------------------"
 for tool in $(find ${TESTS_DIR} -type f -executable -name "osu_alltoall*" | sort); do
 
     #echo ${tool} && ldd ${tool}
-    echo "# --> BEGIN execution"
-    echo "# ${tool}"
+    echo "# --> BEGIN execution: $(basename ${tool})"
+    echo "# exe = ${tool}"
+    echo "# build_env = ${NCAR_BUILD_ENV}"
     echo "# nranks = ${nranks}"
     echo "# nranks/node = ${nranks_per_node}"
     echo "# nnodes = ${nnodes}"
-    mpiexec ${tool} || status="FAIL"
-    echo "# --> END execution"
+    mpiexec ${tool} -m 65536 -i 1000 || status="FAIL"
+    echo "# --> END execution: $(basename ${tool})"
 done
 
 echo && echo && echo

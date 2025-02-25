@@ -32,6 +32,11 @@ run%:
 runosu:
 	$(qsub) -q $(queue) -l select=2:ncpus=128:mpiprocs=1:mem=235G ./osu_pt2pt.pbs
 	$(qsub) -q $(queue) -l select=1:ncpus=128:mpiprocs=2:mem=235G ./osu_pt2pt.pbs
+	for nn in $(nn_range); do \
+	  for ppn in 4 8 16 32 64 128; do \
+	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=235G" && echo $${ss} && $(qsub) -q $(queue) -l select=$${ss} osu_collective.pbs ; \
+	  done ; \
+	done
 
 runmany: stress-ng/stress-ng
 	for j in $$(seq 1 $(njobs)); do \
