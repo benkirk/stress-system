@@ -1,6 +1,7 @@
 njobs ?= 10
 queue ?= system
 qsub ?= qsub
+nn_range ?= 2 4 8 12 16
 
 #	for nn in 2048 1536 1024 512; do \
 # 	for nn in 2 4 8 16 32 64 128 256 384 512; do \
@@ -15,18 +16,22 @@ runstartup:
 	done
 
 runpt2pt:
-	for nn in 2 4 8 16 32 64 96 128; do \
+	for nn in $(nn_range); do \
 	  for ppn in 1 8 16 32 64 120 128; do \
 	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=235G" && echo $${ss} && $(qsub) -q $(queue) -l select=$${ss} round_robin.pbs ; \
 	  done ; \
 	done
 
 run%:
-	for nn in 2 4 8 16 32 64 96 128 256 384 512 768 1024; do \
+	for nn in $(nn_range); do \
 	  for ppn in 4 8 16 32 64 128; do \
 	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=235G" && echo $${ss} && $(qsub) -q $(queue) -l select=$${ss} $*.pbs ; \
 	  done ; \
 	done
+
+runosu:
+	$(qsub) -q $(queue) -l select=2:ncpus=128:mpiprocs=1:mem=235G ./osu_pt2pt.pbs
+	$(qsub) -q $(queue) -l select=1:ncpus=128:mpiprocs=2:mem=235G ./osu_pt2pt.pbs
 
 runmany: stress-ng/stress-ng
 	for j in $$(seq 1 $(njobs)); do \
@@ -89,6 +94,17 @@ results-all%:
 	xzgrep "MPICH Slingshot Network Summary" all$*-nr*.log.xz | grep -v "0 network timeouts" || true
 	xzgrep "avg_time" all$*-nr*.log.xz
 	xzgrep "Slowest" all$*-nr*.log.xz
+
+results-osu%:
+	for file in osu$*-nr*.log; do \
+	  ls -lh $${file} ; \
+	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
+	  txt=$${file/".log"/".txt"} ; \
+	  grep "# --> END execution" $${file} >/dev/null 2>&1 || continue ; \
+	  cat $${file} | awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' > $${txt} ; \
+	  cp $${txt} results-$${stub}.latest.txt ; \
+	done
+	grep "MPICH Slingshot Network Summary" osu$*-nr*.log | grep -v "0 network timeouts" || true
 
 results-failures:
 	@pwd

@@ -1,0 +1,47 @@
+#!/bin/bash
+#PBS -A SCSG0001
+#PBS -q main
+#PBS -j oe
+#PBS -k oed
+#PBS -l walltime=00:15:00
+#PBS -l select=10:ncpus=128:mpiprocs=128:mem=200G
+
+[ -f config_env.sh ] && . config_env.sh
+module load osu-micro-benchmarks
+module list
+
+nodeslist=( $(cat ${PBS_NODEFILE} | sort | uniq | cut -d'.' -f1) )
+nnodes=$(cat ${PBS_NODEFILE} | sort | uniq | wc -l)
+nranks=$(cat ${PBS_NODEFILE} | sort | wc -l)
+nranks_per_node=$((${nranks} / ${nnodes}))
+
+#export MPICH_ENV_DISPLAY=1
+#export MPICH_GPU_SUPPORT_ENABLED=0
+#export MPICH_OFI_VERBOSE=1
+#export MPICH_MEMORY_REPORT=1
+#export MPI_VERBOSE=1
+logfile="osu_collective-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log"
+
+TESTS_DIR="${NCAR_ROOT_OSU_MICRO_BENCHMARKS}"
+
+status="SUCCESS"
+
+exec &> >(tee ${logfile})
+
+echo "------------------------------------------------"
+echo " collective tests:"
+echo "------------------------------------------------"
+for tool in $(find ${TESTS_DIR} -type f -executable -name "osu_alltoall*" | sort); do
+
+    #echo ${tool} && ldd ${tool}
+    echo "# --> BEGIN execution"
+    echo "# ${tool}"
+    echo "# nranks = ${nranks}"
+    echo "# nranks/node = ${nranks_per_node}"
+    echo "# nnodes = ${nnodes}"
+    mpiexec ${tool} || status="FAIL"
+    echo "# --> END execution"
+done
+
+echo && echo && echo
+echo "${status}: Done at $(date)"
