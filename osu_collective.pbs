@@ -18,7 +18,7 @@ nranks_per_node=$((${nranks} / ${nnodes}))
 #export MPICH_OFI_VERBOSE=1
 #export MPICH_MEMORY_REPORT=1
 #export MPI_VERBOSE=1
-logfile="osu_collective-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log"
+logfile="osu_collective-${LMOD_FAMILY_MPI}-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log"
 
 TESTS_DIR="${TESTS_DIR:-${NCAR_ROOT_OSU_MICRO_BENCHMARKS}}"
 
@@ -29,7 +29,7 @@ exec &> >(tee ${logfile})
 echo "------------------------------------------------"
 echo " collective tests:"
 echo "------------------------------------------------"
-for tool in $(find ${TESTS_DIR} -type f -executable -name "osu_alltoall*" | sort); do
+for tool in $(find ${TESTS_DIR} -type f -executable -name "osu_alltoall" | sort); do
 
     #echo ${tool} && ldd ${tool}
     echo "# --> BEGIN execution: $(basename ${tool})"
@@ -38,7 +38,7 @@ for tool in $(find ${TESTS_DIR} -type f -executable -name "osu_alltoall*" | sort
     echo "# nranks = ${nranks}"
     echo "# nranks/node = ${nranks_per_node}"
     echo "# nnodes = ${nnodes}"
-    mpiexec ${tool} -m 65536 -i 500 -x 10 || status="FAIL"
+    mpiexec ${tool} --message-size 1024:1024 --iterations 110 --warmup 10 || status="FAIL"
     echo "# --> END execution: $(basename ${tool})"
     echo && echo && echo
 done

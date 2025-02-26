@@ -19,7 +19,7 @@ nranks_per_node=$((${nranks} / ${nnodes}))
 #export MPICH_MEMORY_REPORT=1
 #export MPI_VERBOSE=1
 
-logfile="osu_pt2pt-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log"
+logfile="osu_pt2pt-${LMOD_FAMILY_MPI}-nr-${nranks}:nn-${nnodes}:ppn-${nranks_per_node}.${PBS_JOBID}.log"
 
 TESTS_DIR="${TESTS_DIR:-${NCAR_ROOT_OSU_MICRO_BENCHMARKS}}"
 

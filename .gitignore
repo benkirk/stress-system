@@ -6,6 +6,7 @@ pt2pt/
 *logs/
 *.log*
 *.txt.*
+osu*.txt
 *.csv.*
 results-*
 *.exe.*.*

@@ -1,7 +1,7 @@
 njobs ?= 10
 queue ?= system
 qsub ?= qsub
-nn_range ?= 2 4 8 12 16
+nn_range ?= 2 4 8 16
 
 #	for nn in 2048 1536 1024 512; do \
 # 	for nn in 2 4 8 16 32 64 128 256 384 512; do \
@@ -33,7 +33,7 @@ runosu:
 	$(qsub) -q $(queue) -l select=2:ncpus=128:mpiprocs=1:mem=235G ./osu_pt2pt.pbs
 	$(qsub) -q $(queue) -l select=1:ncpus=128:mpiprocs=2:mem=235G ./osu_pt2pt.pbs
 	for nn in $(nn_range); do \
-	  for ppn in 4 8 16 32 64 128; do \
+	  for ppn in 1 2 4 8 16 32 64 128; do \
 	    ss="$${nn}:ncpus=128:mpiprocs=$${ppn}:mem=235G" && echo $${ss} && $(qsub) -q $(queue) -l select=$${ss} osu_collective.pbs ; \
 	  done ; \
 	done
@@ -101,7 +101,7 @@ results-all%:
 	xzgrep "Slowest" all$*-nr*.log.xz
 
 results-osu%:
-	for file in osu$*-nr*.log; do \
+	for file in osu$*-*-nr*.log; do \
 	  ls -lh $${file} ; \
 	  stub=$$(echo $${file} | cut -d'.' -f1) ; \
 	  txt=$${file/".log"/".txt"} ; \
@@ -109,7 +109,7 @@ results-osu%:
 	  cat $${file} | awk '/# --> BEGIN execution/{flag=1;next}/# --> END execution/{flag=0}flag' > $${txt} ; \
 	  cp $${txt} results-$${stub}.latest.txt ; \
 	done
-	grep "MPICH Slingshot Network Summary" osu$*-nr*.log | grep -v "0 network timeouts" || true
+	grep "MPICH Slingshot Network Summary" osu$*-*-nr*.log | grep -v "0 network timeouts" || true
 
 results-failures:
 	@pwd
